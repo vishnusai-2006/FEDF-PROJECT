@@ -40,14 +40,16 @@ function App() {
   }
 
   return (
-    <div className="app">
-      {!isLoggedIn ? (
-        <Login onLogin={handleLogin} />
-      ) : (
-        <Dashboard user={user} onLogout={handleLogout} />
-      )}
-    </div>
-  )
+  <div className="app">
+    <h2>Welcome to My React Project - Home Page</h2>   {/* <-- Added line */}
+
+    {!isLoggedIn ? (
+      <Login onLogin={handleLogin} />
+    ) : (
+      <Dashboard user={user} onLogout={handleLogout} />
+    )}
+  </div>
+)
 }
 
 export default App
