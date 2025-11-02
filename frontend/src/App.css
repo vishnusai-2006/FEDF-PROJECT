@@ -1,0 +1,23 @@
+/* Pure React App - Minimal Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+.app {
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Loading Screen - Inline Styles in Components */
