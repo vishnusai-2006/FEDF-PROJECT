@@ -54,8 +54,11 @@ const Login = ({ onLogin }) => {
     }
 
     try {
+      // Use Vite env var if provided, otherwise default to current origin or localhost
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`
+
       // Server expects the login route at /api/login (backend uses /api/* routes)
-      const response = await fetch('http://localhost:3000/api/login', {
+      const response = await fetch(`${API_BASE}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -4,12 +4,14 @@ const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
+const fs = require('fs')
+const frontendDist = path.join(__dirname, '..', 'frontend', 'dist')
 
 // Database setup
 const db = new sqlite3.Database("database.sqlite", (err) => {
@@ -252,6 +254,18 @@ app.get("/api/admin/stats", (req, res) => {
     res.status(500).json({ error: err.message });
   });
 });
+
+// If frontend has been built into ../frontend/dist, serve it as static files
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist))
+
+  // Serve index.html for any non-API route (for SPA routing)
+  app.get(/.*/, (req, res, next) => {
+    // Ensure API routes are not intercepted
+    if (req.path.startsWith('/api')) return next()
+    res.sendFile(path.join(frontendDist, 'index.html'))
+  })
+}
 
 // Start server
 app.listen(PORT, () => {
