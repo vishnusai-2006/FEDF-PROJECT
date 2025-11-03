@@ -54,12 +54,14 @@ const Login = ({ onLogin }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:3000/login', {
+      // Server expects the login route at /api/login (backend uses /api/* routes)
+      const response = await fetch('http://localhost:3000/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        // include a default userType so backend can receive it if needed
+        body: JSON.stringify({ email, password, userType: 'student' }),
       })
 
       const data = await response.json()
@@ -67,10 +69,11 @@ const Login = ({ onLogin }) => {
       if (response.ok) {
         onLogin(data.user)
       } else {
-        setError(data.message || 'Login failed')
+        setError(data.message || `Login failed (status ${response.status})`)
       }
     } catch (err) {
-      setError('Connection error. Please make sure the backend server is running.')
+      // Surface the actual error to help diagnosing connection issues
+      setError(`Connection error: ${err.message}. Please make sure the backend server is running.`)
     } finally {
       setIsLoading(false)
     }
