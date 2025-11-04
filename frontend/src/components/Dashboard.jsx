@@ -288,10 +288,13 @@ const Dashboard = ({ user, onLogout }) => {
               <div 
                 key={activity.id}
                 style={styles.activityCard}
+                role="button"
+                tabIndex={0}
                 onClick={() => showCurrentActivityDetails(activity)}
                 onMouseDown={() => showCurrentActivityDetails(activity)}
-                onMouseEnter={(e) => e.target.style.transform = 'translateY(-5px)'}
-                onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showCurrentActivityDetails(activity) } }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
               >
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
                   <div style={{background: 'rgba(255, 255, 255, 0.2)', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600'}}>
@@ -332,10 +335,13 @@ const Dashboard = ({ user, onLogout }) => {
               <div 
                 key={event.id}
                 style={styles.eventCard}
+                role="button"
+                tabIndex={0}
                 onClick={() => showUpcomingEventDetails(event)}
                 onMouseDown={() => showUpcomingEventDetails(event)}
-                onMouseEnter={(e) => e.target.style.transform = 'translateY(-3px)'}
-                onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showUpcomingEventDetails(event) } }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
               >
                 <div style={styles.eventDate}>
                   <div style={{fontSize: '1.5rem', fontWeight: '700', lineHeight: 1}}>{new Date(event.date).getDate()}</div>
