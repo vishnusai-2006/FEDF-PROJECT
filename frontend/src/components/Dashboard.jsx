@@ -237,8 +237,55 @@ const Dashboard = ({ user, onLogout }) => {
 
   // Search / filter state
   const [query, setQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState('All')
+  const [sortBy, setSortBy] = useState('dateDesc')
 
-  const filteredCurrent = currentActivities.filter(a => a.name.toLowerCase().includes(query.trim().toLowerCase()))
+  const filteredCurrent = currentActivities
+    .filter(a => a.name.toLowerCase().includes(query.trim().toLowerCase()))
+    .filter(a => typeFilter === 'All' ? true : a.type === typeFilter)
+    .sort((x, y) => {
+      if (sortBy === 'dateAsc') return new Date(x.date) - new Date(y.date)
+      if (sortBy === 'dateDesc') return new Date(y.date) - new Date(x.date)
+      return 0
+    })
+
+  const uniqueTypes = Array.from(new Set(currentActivities.map(a => a.type))).filter(Boolean)
+
+  const rsvpToActivity = async (activity) => {
+    try {
+      const stored = localStorage.getItem('user')
+      const userObj = stored ? JSON.parse(stored) : user
+      const studentId = userObj?.id || Math.floor(Math.random()*1000)
+      const resp = await fetch(`${window.location.origin}/api/admin/participation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, activityId: activity.id })
+      })
+      const data = await resp.json()
+      if (resp.ok) {
+        alert(data.message || 'RSVP recorded')
+        setLastAction({ type: 'rsvp', id: activity.id, name: activity.name, time: Date.now() })
+      } else {
+        alert(data.error || data.message || 'Failed to RSVP')
+      }
+    } catch (err) {
+      alert('Connection error: ' + err.message)
+    }
+  }
+
+  const exportActivities = (list) => {
+    const rows = list.map(a => ({ id: a.id, name: a.name, type: a.type, date: a.date, time: a.time, location: a.location }))
+    const csv = [Object.keys(rows[0] || {}).join(','), ...rows.map(r => Object.values(r).map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'activities.csv'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
 
   const showCurrentActivityDetails = (activity) => {
     console.log('showCurrentActivityDetails called for', activity)
@@ -307,9 +354,22 @@ const Dashboard = ({ user, onLogout }) => {
             </h2>
             <p style={{color: '#666', margin: 0}}>Activities you're actively participating in right now</p>
           </div>
-              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
-                <input aria-label="Search activities" placeholder="Search activities..." value={query} onChange={(e) => setQuery(e.target.value)} style={{padding: '0.6rem 0.9rem', borderRadius: 12, border: '1px solid #e6e9ef', width: '320px'}} />
-                <div style={{color: '#666', fontSize: '0.9rem'}}>{filteredCurrent.length} activities</div>
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem'}}>
+                <div style={{display:'flex', gap:8, alignItems:'center'}}>
+                  <input aria-label="Search activities" placeholder="Search activities..." value={query} onChange={(e) => setQuery(e.target.value)} style={{padding: '0.6rem 0.9rem', borderRadius: 12, border: '1px solid #e6e9ef', width: '320px'}} />
+                  <select value={typeFilter} onChange={(e)=>setTypeFilter(e.target.value)} style={{padding:'0.6rem', borderRadius:12, border:'1px solid #e6e9ef'}}>
+                    <option value="All">All types</option>
+                    {uniqueTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <select value={sortBy} onChange={(e)=>setSortBy(e.target.value)} style={{padding:'0.6rem', borderRadius:12, border:'1px solid #e6e9ef'}}>
+                    <option value="dateDesc">Newest</option>
+                    <option value="dateAsc">Oldest</option>
+                  </select>
+                </div>
+                <div style={{display:'flex', gap:8, alignItems:'center'}}>
+                  <div style={{color: '#666', fontSize: '0.9rem'}}>{filteredCurrent.length} activities</div>
+                  <button onClick={() => exportActivities(filteredCurrent)} style={{padding:'0.6rem 0.9rem', borderRadius:12, border:'none', background:'#667eea', color:'white'}}>Export CSV</button>
+                </div>
               </div>
               <div style={styles.grid}>
             {filteredCurrent.map(activity => (
@@ -434,6 +494,7 @@ const Dashboard = ({ user, onLogout }) => {
               <div style={{marginTop:8, display:'flex', gap:8}}>
                 <button style={{padding:'0.5rem 0.75rem', borderRadius:8, border:'none', background:'#667eea', color:'white'}}>View Full Report</button>
                 <button style={{padding:'0.5rem 0.75rem', borderRadius:8, border:'1px solid #e6e9ef', background:'white'}}>Update Progress</button>
+                <button onClick={() => rsvpToActivity(selectedActivity)} style={{padding:'0.5rem 0.75rem', borderRadius:8, border:'none', background:'#28a745', color:'white'}}>RSVP</button>
               </div>
             </div>
           )}
@@ -477,6 +538,7 @@ const Dashboard = ({ user, onLogout }) => {
                 <button style={{padding: '0.75rem 1.5rem', background: '#f8f9ff', color: '#667eea', border: '2px solid #667eea', borderRadius: '25px', cursor: 'pointer'}}>
                   Update Progress
                 </button>
+                <button onClick={() => rsvpToActivity(selectedActivity)} style={{padding: '0.75rem 1.5rem', background: '#28a745', color: 'white', border: 'none', borderRadius: '25px', cursor: 'pointer'}}>RSVP</button>
               </div>
             </div>
           </div>
