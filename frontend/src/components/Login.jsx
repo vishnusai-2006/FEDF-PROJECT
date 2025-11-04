@@ -67,12 +67,36 @@ const Login = ({ onLogin }) => {
         body: JSON.stringify({ email, password, userType: 'student' }),
       })
 
-      const data = await response.json()
+      // Safely parse response body. Some error responses may be empty or non-JSON (HTML error pages).
+      let data = {}
+      try {
+        const contentType = response.headers.get('content-type') || ''
+        if (contentType.includes('application/json')) {
+          data = await response.json()
+        } else {
+          // Try to read as text and parse if possible, otherwise store raw text as message
+          const text = await response.text()
+          try {
+            data = text ? JSON.parse(text) : {}
+          } catch (e) {
+            data = { message: text }
+          }
+        }
+      } catch (parseErr) {
+        // If parsing fails, fallback to an informative message
+        console.warn('Failed to parse login response body:', parseErr)
+        data = { message: `Invalid response from server (status ${response.status})` }
+      }
 
       if (response.ok) {
-        onLogin(data.user)
+        // Ensure we have a user object
+        if (data && data.user) {
+          onLogin(data.user)
+        } else {
+          setError('Login succeeded but server returned unexpected payload.')
+        }
       } else {
-        setError(data.message || `Login failed (status ${response.status})`)
+        setError((data && data.message) || `Login failed (status ${response.status})`)
       }
     } catch (err) {
       // Surface the actual error to help diagnosing connection issues
