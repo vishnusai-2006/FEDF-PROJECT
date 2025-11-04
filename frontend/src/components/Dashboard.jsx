@@ -219,6 +219,7 @@ const Dashboard = ({ user, onLogout }) => {
   }, [])
 
   const showCurrentActivityDetails = (activity) => {
+    console.log('showCurrentActivityDetails called for', activity)
     setSelectedActivity(activity)
   }
 
@@ -288,6 +289,7 @@ const Dashboard = ({ user, onLogout }) => {
                 key={activity.id}
                 style={styles.activityCard}
                 onClick={() => showCurrentActivityDetails(activity)}
+                onMouseDown={() => showCurrentActivityDetails(activity)}
                 onMouseEnter={(e) => e.target.style.transform = 'translateY(-5px)'}
                 onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
               >
@@ -331,6 +333,7 @@ const Dashboard = ({ user, onLogout }) => {
                 key={event.id}
                 style={styles.eventCard}
                 onClick={() => showUpcomingEventDetails(event)}
+                onMouseDown={() => showUpcomingEventDetails(event)}
                 onMouseEnter={(e) => e.target.style.transform = 'translateY(-3px)'}
                 onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
               >
