@@ -41,7 +41,6 @@ function App() {
 
   return (
   <div className="app">
-    <h2>Welcome to My React Project - Home Page</h2>   {/* <-- Added line */}
 
     {!isLoggedIn ? (
       <Login onLogin={handleLogin} />
