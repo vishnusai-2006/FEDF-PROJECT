@@ -116,7 +116,9 @@ const Dashboard = ({ user, onLogout }) => {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      zIndex: 1000
+      zIndex: 2147483647,
+      pointerEvents: 'auto',
+      WebkitTapHighlightColor: 'transparent'
     },
     modalContent: {
       background: 'white',
@@ -126,6 +128,16 @@ const Dashboard = ({ user, onLogout }) => {
       maxHeight: '90vh',
       overflow: 'auto',
       position: 'relative'
+    },
+
+    modalEnter: {
+      transform: 'translateY(10px)',
+      opacity: 0,
+      transition: 'transform 240ms ease, opacity 240ms ease'
+    },
+    modalActive: {
+      transform: 'translateY(0)',
+      opacity: 1
     },
     modalHeader: {
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -223,6 +235,11 @@ const Dashboard = ({ user, onLogout }) => {
     ])
   }, [])
 
+  // Search / filter state
+  const [query, setQuery] = useState('')
+
+  const filteredCurrent = currentActivities.filter(a => a.name.toLowerCase().includes(query.trim().toLowerCase()))
+
   const showCurrentActivityDetails = (activity) => {
     console.log('showCurrentActivityDetails called for', activity)
     setSelectedActivity(activity)
@@ -290,11 +307,15 @@ const Dashboard = ({ user, onLogout }) => {
             </h2>
             <p style={{color: '#666', margin: 0}}>Activities you're actively participating in right now</p>
           </div>
-          <div style={styles.grid}>
-            {currentActivities.map(activity => (
-              <div 
-                key={activity.id}
-                style={{...styles.activityCard, ...(focusedId === activity.id ? styles.activityCardFocused : {})}}
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
+                <input aria-label="Search activities" placeholder="Search activities..." value={query} onChange={(e) => setQuery(e.target.value)} style={{padding: '0.6rem 0.9rem', borderRadius: 12, border: '1px solid #e6e9ef', width: '320px'}} />
+                <div style={{color: '#666', fontSize: '0.9rem'}}>{filteredCurrent.length} activities</div>
+              </div>
+              <div style={styles.grid}>
+            {filteredCurrent.map(activity => (
+                  <div 
+                    key={activity.id}
+                    style={{...styles.activityCard, ...(focusedId === activity.id ? styles.activityCardFocused : {})}}
                 role="button"
                 tabIndex={0}
                 onClick={() => showCurrentActivityDetails(activity)}
@@ -401,6 +422,32 @@ const Dashboard = ({ user, onLogout }) => {
         <div style={{marginTop:6}}>selectedActivity: {selectedActivity ? selectedActivity.name : 'none'}</div>
         <div>selectedEvent: {selectedEvent ? selectedEvent.name : 'none'}</div>
       </div>
+
+      {/* Inline fallback details (visible if modal doesn't appear) */}
+      { (selectedActivity || selectedEvent) && (
+        <div style={{position: 'fixed', left: 12, bottom: 12, background: 'white', color: '#222', padding: '1rem', borderRadius: 10, boxShadow: '0 6px 30px rgba(0,0,0,0.15)', zIndex: 2000, maxWidth: '420px'}}>
+          <div style={{fontWeight: 700, marginBottom: 6}}>{selectedActivity ? 'Activity details' : 'Event details'}</div>
+          {selectedActivity && (
+            <div>
+              <div style={{fontSize: '1.05rem', fontWeight: 700}}>{selectedActivity.name}</div>
+              <div style={{color: '#666', fontSize: '0.9rem', marginTop: 6}}>{selectedActivity.contribution}</div>
+              <div style={{marginTop:8, display:'flex', gap:8}}>
+                <button style={{padding:'0.5rem 0.75rem', borderRadius:8, border:'none', background:'#667eea', color:'white'}}>View Full Report</button>
+                <button style={{padding:'0.5rem 0.75rem', borderRadius:8, border:'1px solid #e6e9ef', background:'white'}}>Update Progress</button>
+              </div>
+            </div>
+          )}
+          {selectedEvent && (
+            <div>
+              <div style={{fontSize: '1.05rem', fontWeight: 700}}>{selectedEvent.name}</div>
+              <div style={{color: '#666', fontSize: '0.9rem', marginTop: 6}}>When: {new Date(selectedEvent.date).toLocaleString()}</div>
+              <div style={{marginTop:8}}>
+                <button style={{padding:'0.5rem 0.75rem', borderRadius:8, border:'none', background:'#667eea', color:'white'}}>Join Event</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Simple Modal for Activity Details */}
       {selectedActivity && (
