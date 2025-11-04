@@ -5,6 +5,8 @@ const Dashboard = ({ user, onLogout }) => {
   const [upcomingEvents, setUpcomingEvents] = useState([])
   const [selectedActivity, setSelectedActivity] = useState(null)
   const [selectedEvent, setSelectedEvent] = useState(null)
+  const [focusedId, setFocusedId] = useState(null)
+  const [lastAction, setLastAction] = useState(null)
 
   // Inline styles object
   const styles = {
@@ -81,6 +83,9 @@ const Dashboard = ({ user, onLogout }) => {
       color: 'white',
       cursor: 'pointer',
       transition: 'transform 0.3s ease'
+    },
+    activityCardFocused: {
+      boxShadow: '0 0 0 4px rgba(102,126,234,0.25)'
     },
     eventCard: {
       background: 'white',
@@ -221,10 +226,12 @@ const Dashboard = ({ user, onLogout }) => {
   const showCurrentActivityDetails = (activity) => {
     console.log('showCurrentActivityDetails called for', activity)
     setSelectedActivity(activity)
+    setLastAction({ type: 'open-activity', id: activity.id, name: activity.name, time: Date.now() })
   }
 
   const showUpcomingEventDetails = (event) => {
     setSelectedEvent(event)
+    setLastAction({ type: 'open-event', id: event.id, name: event.name, time: Date.now() })
   }
 
   const closeModal = () => {
@@ -287,7 +294,7 @@ const Dashboard = ({ user, onLogout }) => {
             {currentActivities.map(activity => (
               <div 
                 key={activity.id}
-                style={styles.activityCard}
+                style={{...styles.activityCard, ...(focusedId === activity.id ? styles.activityCardFocused : {})}}
                 role="button"
                 tabIndex={0}
                 onClick={() => showCurrentActivityDetails(activity)}
@@ -295,6 +302,8 @@ const Dashboard = ({ user, onLogout }) => {
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showCurrentActivityDetails(activity) } }}
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
                 onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                onFocus={() => setFocusedId(activity.id)}
+                onBlur={() => setFocusedId(null)}
               >
                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
                   <div style={{background: 'rgba(255, 255, 255, 0.2)', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600'}}>
@@ -334,7 +343,7 @@ const Dashboard = ({ user, onLogout }) => {
             {upcomingEvents.map(event => (
               <div 
                 key={event.id}
-                style={styles.eventCard}
+                style={{...styles.eventCard, ...(focusedId === event.id ? styles.activityCardFocused : {})}}
                 role="button"
                 tabIndex={0}
                 onClick={() => showUpcomingEventDetails(event)}
@@ -342,6 +351,8 @@ const Dashboard = ({ user, onLogout }) => {
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showUpcomingEventDetails(event) } }}
                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
                 onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                onFocus={() => setFocusedId(event.id)}
+                onBlur={() => setFocusedId(null)}
               >
                 <div style={styles.eventDate}>
                   <div style={{fontSize: '1.5rem', fontWeight: '700', lineHeight: 1}}>{new Date(event.date).getDate()}</div>
@@ -382,6 +393,14 @@ const Dashboard = ({ user, onLogout }) => {
           </div>
         </div>
       </main>
+
+      {/* Debug panel (visible during testing) */}
+      <div style={{position: 'fixed', right: 12, bottom: 12, background: 'rgba(0,0,0,0.7)', color: 'white', padding: '0.75rem 1rem', borderRadius: 8, fontSize: '0.85rem', zIndex: 2000}}>
+        <div style={{fontWeight: 700, marginBottom: 6}}>Debug</div>
+        <div>lastAction: {lastAction ? `${lastAction.type} (${lastAction.name})` : 'none'}</div>
+        <div style={{marginTop:6}}>selectedActivity: {selectedActivity ? selectedActivity.name : 'none'}</div>
+        <div>selectedEvent: {selectedEvent ? selectedEvent.name : 'none'}</div>
+      </div>
 
       {/* Simple Modal for Activity Details */}
       {selectedActivity && (
