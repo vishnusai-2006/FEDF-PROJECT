@@ -36,45 +36,43 @@ const Dashboard = ({ user, onLogout }) => {
       gap: '1rem'
     },
     userAvatar: {
-      {/* Simple Modal for Event Details (rendered via portal) */}
-      {selectedEvent && (
-        <ModalPortal>
-          <div style={styles.modal} onClick={closeModal}>
-            <div style={{...styles.modalContent, ...styles.modalEnter, ...(true ? styles.modalActive : {})}} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.modalHeader}>
-                <h2 style={{margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
-                  <i className="fas fa-calendar-plus"></i> {selectedEvent.name}
-                </h2>
-                <button style={styles.modalClose} onClick={closeModal}>&times;</button>
-              </div>
-              <div style={styles.modalBody}>
-                <h3 style={{display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem'}}>
-                  <i className="fas fa-clock"></i> Event Schedule
-                </h3>
-                <div style={{marginBottom: '1.5rem'}}>
-                  <p><strong>Date:</strong> {new Date(selectedEvent.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  <p><strong>Day:</strong> {new Date(selectedEvent.date).toLocaleDateString('en-US', { weekday: 'long' })}</p>
-                  <p><strong>Time:</strong> {selectedEvent.time}</p>
-                  <p><strong>Location:</strong> {selectedEvent.location}</p>
-                  <p><strong>Type:</strong> {selectedEvent.type}</p>
-                  <p><strong>Time Until Event:</strong> {getTimeUntilEvent(selectedEvent.date)}</p>
-                </div>
-                <div style={{display: 'flex', gap: '1rem', justifyContent: 'center'}}>
-                  <button 
-                    style={{padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none', borderRadius: '25px', cursor: 'pointer'}}
-                    onClick={() => { showToast(`Joining ${selectedEvent.name}...`, 'success') }}
-                  >
-                    Join This Event
-                  </button>
-                  <button style={{padding: '0.75rem 1.5rem', background: '#f8f9ff', color: '#667eea', border: '2px solid #667eea', borderRadius: '25px', cursor: 'pointer'}}>
-                    Add to Calendar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
-      )}
+      width: '60px',
+      height: '60px',
+      background: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      border: '2px solid rgba(255, 255, 255, 0.3)'
+    },
+    logoutBtn: {
+      background: 'rgba(255, 255, 255, 0.2)',
+      color: 'white',
+      border: '2px solid rgba(255, 255, 255, 0.3)',
+      padding: '0.75rem 1.5rem',
+      borderRadius: '25px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem'
+    },
+    main: {
+      maxWidth: '1200px',
+      margin: '0 auto',
+      padding: '2rem'
+    },
+    section: {
+      background: 'white',
+      borderRadius: '20px',
+      padding: '2rem',
+      marginBottom: '2rem',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
+    },
+    sectionHeader: {
+      textAlign: 'center',
+      marginBottom: '2rem'
+    },
+    grid: {
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
       gap: '1.5rem'

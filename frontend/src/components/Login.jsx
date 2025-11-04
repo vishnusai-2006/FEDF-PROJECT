@@ -46,16 +46,31 @@ const Login = ({ onLogin }) => {
     setIsLoading(true)
     setError('')
 
-    // Validate Gmail address
-    if (!email.includes('@gmail.com')) {
+    // Normalize and validate Gmail address (trim + lowercase)
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!normalizedEmail.endsWith('@gmail.com')) {
       setError('Please use a Gmail address')
       setIsLoading(false)
       return
     }
 
     try {
-      // Use Vite env var if provided, otherwise default to current origin or localhost
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`
+      // Use Vite env var if provided.
+      // When developing locally (Vite dev server), window.location.origin points to the dev server (default :5173)
+      // while the backend runs on port 3000. Fall back to port 3000 for localhost to reach the backend.
+      const API_BASE = import.meta.env.VITE_API_BASE_URL || (() => {
+        try {
+          const host = window.location.hostname
+          const proto = window.location.protocol
+          // If running on localhost or 127.0.0.1, assume backend is at port 3000
+          if (host === 'localhost' || host === '127.0.0.1') {
+            return `${proto}//${host}:3000`
+          }
+        } catch (e) {
+          // ignore and fallback to origin
+        }
+        return window.location.origin
+      })()
 
       // Server expects the login route at /api/login (backend uses /api/* routes)
       const response = await fetch(`${API_BASE}/api/login`, {
@@ -64,7 +79,8 @@ const Login = ({ onLogin }) => {
           'Content-Type': 'application/json',
         },
         // include a default userType so backend can receive it if needed
-        body: JSON.stringify({ email, password, userType: 'student' }),
+        // send normalized email to avoid casing/spacing issues
+        body: JSON.stringify({ email: normalizedEmail, password, userType: 'student' }),
       })
 
       // Safely parse response body. Some error responses may be empty or non-JSON (HTML error pages).

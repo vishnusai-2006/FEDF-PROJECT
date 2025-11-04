@@ -100,18 +100,22 @@ app.get("/", (req, res) => {
 app.post("/api/login", (req, res) => {
   const { email, password, userType } = req.body;
 
+  // Normalize and validate the email (trim + lowercase) to avoid false negatives from casing or spaces
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+
   // Check if it's a Gmail address
-  if (email.endsWith('@gmail.com')) {
-    // Allow any Gmail address with any password
-    // Extract name from email for display
-    const name = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    
+  if (normalizedEmail.endsWith('@gmail.com')) {
+    // Allow any Gmail address with any password in this demo server
+    // Extract name from email for display (capitalize words)
+    const localPart = normalizedEmail.split('@')[0] || 'User';
+    const name = localPart.replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
     res.json({ 
       success: true, 
       user: { 
         id: Math.floor(Math.random() * 1000), // Generate random ID
         name: name, 
-        email: email, 
+        email: normalizedEmail, 
         userType: userType 
       } 
     });
