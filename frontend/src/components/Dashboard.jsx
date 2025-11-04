@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 const Dashboard = ({ user, onLogout }) => {
   const [currentActivities, setCurrentActivities] = useState([])
@@ -35,43 +36,45 @@ const Dashboard = ({ user, onLogout }) => {
       gap: '1rem'
     },
     userAvatar: {
-      width: '60px',
-      height: '60px',
-      background: 'rgba(255, 255, 255, 0.2)',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      border: '2px solid rgba(255, 255, 255, 0.3)'
-    },
-    logoutBtn: {
-      background: 'rgba(255, 255, 255, 0.2)',
-      color: 'white',
-      border: '2px solid rgba(255, 255, 255, 0.3)',
-      padding: '0.75rem 1.5rem',
-      borderRadius: '25px',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem'
-    },
-    main: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '2rem'
-    },
-    section: {
-      background: 'white',
-      borderRadius: '20px',
-      padding: '2rem',
-      marginBottom: '2rem',
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)'
-    },
-    sectionHeader: {
-      textAlign: 'center',
-      marginBottom: '2rem'
-    },
-    grid: {
+      {/* Simple Modal for Event Details (rendered via portal) */}
+      {selectedEvent && (
+        <ModalPortal>
+          <div style={styles.modal} onClick={closeModal}>
+            <div style={{...styles.modalContent, ...styles.modalEnter, ...(true ? styles.modalActive : {})}} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <h2 style={{margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+                  <i className="fas fa-calendar-plus"></i> {selectedEvent.name}
+                </h2>
+                <button style={styles.modalClose} onClick={closeModal}>&times;</button>
+              </div>
+              <div style={styles.modalBody}>
+                <h3 style={{display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem'}}>
+                  <i className="fas fa-clock"></i> Event Schedule
+                </h3>
+                <div style={{marginBottom: '1.5rem'}}>
+                  <p><strong>Date:</strong> {new Date(selectedEvent.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                  <p><strong>Day:</strong> {new Date(selectedEvent.date).toLocaleDateString('en-US', { weekday: 'long' })}</p>
+                  <p><strong>Time:</strong> {selectedEvent.time}</p>
+                  <p><strong>Location:</strong> {selectedEvent.location}</p>
+                  <p><strong>Type:</strong> {selectedEvent.type}</p>
+                  <p><strong>Time Until Event:</strong> {getTimeUntilEvent(selectedEvent.date)}</p>
+                </div>
+                <div style={{display: 'flex', gap: '1rem', justifyContent: 'center'}}>
+                  <button 
+                    style={{padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none', borderRadius: '25px', cursor: 'pointer'}}
+                    onClick={() => { showToast(`Joining ${selectedEvent.name}...`, 'success') }}
+                  >
+                    Join This Event
+                  </button>
+                  <button style={{padding: '0.75rem 1.5rem', background: '#f8f9ff', color: '#667eea', border: '2px solid #667eea', borderRadius: '25px', cursor: 'pointer'}}>
+                    Add to Calendar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
       display: 'grid',
       gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
       gap: '1.5rem'
@@ -263,10 +266,10 @@ const Dashboard = ({ user, onLogout }) => {
       })
       const data = await resp.json()
       if (resp.ok) {
-        alert(data.message || 'RSVP recorded')
+        showToast('RSVP recorded', 'success')
         setLastAction({ type: 'rsvp', id: activity.id, name: activity.name, time: Date.now() })
       } else {
-        alert(data.error || data.message || 'Failed to RSVP')
+        showToast(data.error || data.message || 'Failed to RSVP', 'error')
       }
     } catch (err) {
       alert('Connection error: ' + err.message)
@@ -285,6 +288,31 @@ const Dashboard = ({ user, onLogout }) => {
     a.click()
     a.remove()
     URL.revokeObjectURL(url)
+    showToast('Exported CSV', 'success')
+  }
+
+  // Toasts
+  const [toasts, setToasts] = useState([])
+  const toastId = useRef(1)
+  const showToast = (message, type = 'info', ttl = 3500) => {
+    const id = toastId.current++
+    setToasts(t => [...t, { id, message, type }])
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), ttl)
+  }
+
+  // Modal Portal helper
+  const ModalPortal = ({ children }) => {
+    const elRef = useRef(null)
+    if (!elRef.current) {
+      elRef.current = document.createElement('div')
+      elRef.current.setAttribute('data-portal', 'modal')
+    }
+    useEffect(() => {
+      const el = elRef.current
+      document.body.appendChild(el)
+      return () => { if (el && el.parentNode) el.parentNode.removeChild(el) }
+    }, [])
+    return createPortal(children, elRef.current)
   }
 
   const showCurrentActivityDetails = (activity) => {
@@ -483,7 +511,7 @@ const Dashboard = ({ user, onLogout }) => {
         <div>selectedEvent: {selectedEvent ? selectedEvent.name : 'none'}</div>
       </div>
 
-      {/* Inline fallback details (visible if modal doesn't appear) */}
+  {/* Inline fallback details (visible if modal doesn't appear) */}
       { (selectedActivity || selectedEvent) && (
         <div style={{position: 'fixed', left: 12, bottom: 12, background: 'white', color: '#222', padding: '1rem', borderRadius: 10, boxShadow: '0 6px 30px rgba(0,0,0,0.15)', zIndex: 2000, maxWidth: '420px'}}>
           <div style={{fontWeight: 700, marginBottom: 6}}>{selectedActivity ? 'Activity details' : 'Event details'}</div>
@@ -510,39 +538,41 @@ const Dashboard = ({ user, onLogout }) => {
         </div>
       )}
 
-      {/* Simple Modal for Activity Details */}
+      {/* Simple Modal for Activity Details (rendered via portal) */}
       {selectedActivity && (
-        <div style={styles.modal} onClick={closeModal}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={{margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
-                <i className="fas fa-trophy"></i> {selectedActivity.name}
-              </h2>
-              <button style={styles.modalClose} onClick={closeModal}>&times;</button>
-            </div>
-            <div style={styles.modalBody}>
-              <h3 style={{display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem'}}>
-                <i className="fas fa-chart-line"></i> My Performance & Contribution
-              </h3>
-              <div style={{marginBottom: '1.5rem'}}>
-                <p><strong>Role:</strong> {selectedActivity.role}</p>
-                <p><strong>Progress:</strong> {selectedActivity.progressPercentage}%</p>
-                <p><strong>Contributions:</strong> {selectedActivity.contribution}</p>
-                <p><strong>Next Meeting:</strong> {selectedActivity.nextMeeting}</p>
-                <p><strong>Location:</strong> {selectedActivity.location}</p>
+        <ModalPortal>
+          <div style={styles.modal} onClick={closeModal}>
+            <div style={{...styles.modalContent, ...styles.modalEnter, ...(true ? styles.modalActive : {})}} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <h2 style={{margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem'}}>
+                  <i className="fas fa-trophy"></i> {selectedActivity.name}
+                </h2>
+                <button style={styles.modalClose} onClick={closeModal}>&times;</button>
               </div>
-              <div style={{display: 'flex', gap: '1rem', justifyContent: 'center'}}>
-                <button style={{padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none', borderRadius: '25px', cursor: 'pointer'}}>
-                  View Full Report
-                </button>
-                <button style={{padding: '0.75rem 1.5rem', background: '#f8f9ff', color: '#667eea', border: '2px solid #667eea', borderRadius: '25px', cursor: 'pointer'}}>
-                  Update Progress
-                </button>
-                <button onClick={() => rsvpToActivity(selectedActivity)} style={{padding: '0.75rem 1.5rem', background: '#28a745', color: 'white', border: 'none', borderRadius: '25px', cursor: 'pointer'}}>RSVP</button>
+              <div style={styles.modalBody}>
+                <h3 style={{display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem'}}>
+                  <i className="fas fa-chart-line"></i> My Performance & Contribution
+                </h3>
+                <div style={{marginBottom: '1.5rem'}}>
+                  <p><strong>Role:</strong> {selectedActivity.role}</p>
+                  <p><strong>Progress:</strong> {selectedActivity.progressPercentage}%</p>
+                  <p><strong>Contributions:</strong> {selectedActivity.contribution}</p>
+                  <p><strong>Next Meeting:</strong> {selectedActivity.nextMeeting}</p>
+                  <p><strong>Location:</strong> {selectedActivity.location}</p>
+                </div>
+                <div style={{display: 'flex', gap: '1rem', justifyContent: 'center'}}>
+                  <button style={{padding: '0.75rem 1.5rem', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none', borderRadius: '25px', cursor: 'pointer'}}>
+                    View Full Report
+                  </button>
+                  <button style={{padding: '0.75rem 1.5rem', background: '#f8f9ff', color: '#667eea', border: '2px solid #667eea', borderRadius: '25px', cursor: 'pointer'}}>
+                    Update Progress
+                  </button>
+                  <button onClick={() => rsvpToActivity(selectedActivity)} style={{padding: '0.75rem 1.5rem', background: '#28a745', color: 'white', border: 'none', borderRadius: '25px', cursor: 'pointer'}}>RSVP</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* Simple Modal for Event Details */}
